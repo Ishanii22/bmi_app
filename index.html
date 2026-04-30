@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BMI Predictor</title>
+<link href="body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;background-image:url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1920&q=80');background-size:cover;background-position:center;background-attachment:fixed;}">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0f0f13;--surface:#1a1a22;--surface2:#22222e;--border:#2e2e3e;
+  --accent:#7c6af7;--accent2:#f472b6;--text:#f0f0f5;--muted:#8888a0;
+  --green:#34d399;--yellow:#fbbf24;--red:#f87171;--blue:#60a5fa;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;background-image:url('https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1920&q=80');background-size:cover;background-position:center;background-attachment:fixed;}
+.page{display:none;min-height:100vh;}
+.page.active{display:flex;}
+#page-welcome{flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;position:relative;overflow:hidden;background:rgba(15,15,19,0.75);backdrop-filter:blur(8px);}
+#page-welcome::before{content:'';position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(124,106,247,0.12) 0%,transparent 70%);top:-100px;left:-100px;pointer-events:none;}
+#page-welcome::after{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(244,114,182,0.08) 0%,transparent 70%);bottom:-50px;right:-50px;pointer-events:none;}
+.welcome-inner{max-width:520px;width:100%;z-index:1;}
+.welcome-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(124,106,247,0.15);border:1px solid rgba(124,106,247,0.3);border-radius:99px;padding:6px 16px;font-size:13px;color:var(--accent);margin-bottom:28px;}
+.welcome-badge span{width:6px;height:6px;border-radius:50%;background:var(--accent);display:inline-block;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.welcome-title{font-family:'Playfair Display',serif;font-size:clamp(36px,6vw,52px);line-height:1.15;margin-bottom:16px;background:linear-gradient(135deg,#f0f0f5 40%,var(--accent));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.welcome-sub{color:var(--muted);font-size:16px;line-height:1.7;margin-bottom:40px;}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:32px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+.field{display:flex;flex-direction:column;gap:8px;}
+.field label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;}
+.field input,.field select{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;outline:none;transition:border-color 0.2s;}
+.field input:focus,.field select:focus{border-color:var(--accent);}
+.field select option{background:var(--surface2);}
+.btn-primary{width:100%;padding:15px;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:12px;color:white;font-size:16px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;margin-top:8px;transition:opacity 0.2s,transform 0.1s;}
+.btn-primary:hover{opacity:0.9;}
+.btn-primary:active{transform:scale(0.98);}
+#page-predict{flex-direction:column;align-items:center;padding:32px 20px;background:rgba(15,15,19,0.75);backdrop-filter:blur(8px);}
+.topbar{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:640px;margin-bottom:28px;flex-wrap:wrap;gap:12px;}
+.topbar-name{font-size:15px;color:var(--muted);}
+.topbar-name strong{color:var(--text);}
+.nav-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:4px;}
+.nav-tab{padding:7px 14px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all 0.2s;}
+.nav-tab.active{background:var(--accent);color:white;}
+.predict-card{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;width:100%;max-width:640px;}
+.card-title{font-size:18px;font-weight:600;margin-bottom:20px;}
+.how-to{background:rgba(124,106,247,0.08);border:1px solid rgba(124,106,247,0.2);border-radius:12px;padding:16px;margin-bottom:24px;}
+.how-to-title{font-size:13px;font-weight:600;color:var(--accent);margin-bottom:10px;}
+.how-to-steps{font-size:13px;color:var(--muted);line-height:2;}
+.how-to-steps strong{color:var(--text);}
+.gender-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.gender-btn{padding:14px;border-radius:12px;border:2px solid var(--border);background:transparent;color:var(--muted);font-size:15px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s;text-align:center;}
+.gender-btn.selected{border-color:var(--accent);background:rgba(124,106,247,0.1);color:var(--accent);}
+.slider-field{margin-bottom:24px;}
+.slider-field label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;display:block;margin-bottom:10px;}
+.slider-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;}
+.slider-num{font-size:28px;font-weight:600;color:var(--accent);}
+.slider-unit{font-size:14px;color:var(--muted);}
+input[type=range]{width:100%;height:4px;border-radius:99px;background:var(--border);outline:none;border:none;accent-color:var(--accent);cursor:pointer;}
+.result-box{margin-top:24px;border-radius:16px;padding:24px;display:none;animation:fadeUp 0.4s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.result-box.normal{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);}
+.result-box.weak{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.25);}
+.result-box.warning{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);}
+.result-box.danger{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);}
+.result-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.result-bmi{font-size:56px;font-weight:700;font-family:'Playfair Display',serif;line-height:1;}
+.result-bmi.normal{color:var(--green);}
+.result-bmi.weak{color:var(--blue);}
+.result-bmi.warning{color:var(--yellow);}
+.result-bmi.danger{color:var(--red);}
+.result-right{text-align:right;}
+.result-cat{font-size:18px;font-weight:600;}
+.result-msg{font-size:13px;color:var(--muted);margin-top:4px;}
+.result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px;}
+.rstat{background:var(--surface2);border-radius:10px;padding:12px;text-align:center;}
+.rstat-val{font-size:16px;font-weight:600;}
+.rstat-label{font-size:11px;color:var(--muted);margin-top:2px;}
+.section-label{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px;}
+.scale-bar{display:flex;border-radius:99px;overflow:hidden;height:10px;}
+.scale-seg{flex:1;}
+.seg-0{background:#60a5fa;}.seg-1{background:#93c5fd;}.seg-2{background:#34d399;}
+.seg-3{background:#fbbf24;}.seg-4{background:#f97316;}.seg-5{background:#f87171;}
+.scale-pointer-wrap{position:relative;height:24px;margin-top:4px;}
+.scale-pointer{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--text);font-weight:600;transition:left 0.5s ease;}
+.scale-pointer::before{content:'▲';display:block;text-align:center;font-size:8px;margin-bottom:2px;}
+.scale-legend{display:flex;justify-content:space-between;}
+.scale-legend span{font-size:10px;color:var(--muted);}
+.normal-range{margin-top:20px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:12px;padding:16px;}
+.normal-range-title{font-size:13px;font-weight:600;color:var(--green);margin-bottom:10px;}
+.normal-range-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+.nrg-item{background:var(--surface2);border-radius:8px;padding:10px;text-align:center;}
+.nrg-val{font-size:16px;font-weight:600;color:var(--green);}
+.nrg-label{font-size:11px;color:var(--muted);margin-top:2px;}
+.weight-diff{font-size:13px;color:var(--muted);margin-top:10px;text-align:center;line-height:1.6;}
+.weight-diff strong{color:var(--text);}
+.ai-reco{margin-top:20px;border-radius:12px;padding:16px;}
+.ai-reco.reco-weak{background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);}
+.ai-reco.reco-normal{background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);}
+.ai-reco.reco-warning{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);}
+.ai-reco.reco-danger{background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);}
+.ai-reco-title{font-size:13px;font-weight:600;margin-bottom:12px;}
+.ai-tip{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;}
+.ai-tip-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.ai-tip-text{font-size:13px;color:var(--muted);line-height:1.6;}
+.ai-tip-text strong{color:var(--text);}
+.report-btn{width:100%;margin-top:20px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:14px;font-weight:500;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:border-color 0.2s;}
+.report-btn:hover{border-color:var(--accent);}
+#page-history{flex-direction:column;align-items:center;padding:32px 20px;background:rgba(15,15,19,0.75);backdrop-filter:blur(8px);}
+.history-wrap{width:100%;max-width:640px;}
+.history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.history-title{font-size:20px;font-weight:600;}
+.clear-btn{padding:8px 16px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+.clear-btn:hover{border-color:var(--red);color:var(--red);}
+.history-empty{text-align:center;padding:60px 20px;color:var(--muted);}
+.history-empty .big{font-size:48px;margin-bottom:12px;}
+.history-item{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;animation:slideIn 0.3s ease;}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px);}to{opacity:1;transform:translateY(0);}}
+.hi-left{display:flex;align-items:center;gap:12px;}
+.hi-avatar{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0;}
+.hi-info .hi-name{font-weight:600;font-size:14px;}
+.hi-info .hi-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.hi-right{text-align:right;}
+.hi-bmi{font-size:20px;font-weight:700;}
+.hi-cat{font-size:11px;color:var(--muted);margin-top:2px;}
+.hi-time{font-size:10px;color:var(--muted);margin-top:3px;}
+#page-dash{flex-direction:column;align-items:center;padding:32px 20px;background:rgba(15,15,19,0.75);backdrop-filter:blur(8px);}
+.dash-wrap{width:100%;max-width:640px;}
+.dash-title{font-size:20px;font-weight:600;margin-bottom:20px;}
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;}
+.dash-card-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+.dash-card-val{font-size:30px;font-weight:700;}
+.dash-card-sub{font-size:12px;color:var(--muted);margin-top:4px;}
+.dash-full{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:14px;}
+.dash-full-title{font-size:13px;font-weight:600;margin-bottom:16px;color:var(--muted);}
+.dist-bar{display:flex;gap:4px;height:100px;align-items:flex-end;margin-bottom:8px;}
+.dist-col{flex:1;border-radius:6px 6px 0 0;min-height:4px;transition:height 0.5s ease;position:relative;}
+.dist-col .dist-tip{position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:11px;font-weight:600;white-space:nowrap;color:var(--text);}
+.dist-labels{display:flex;gap:4px;}
+.dist-labels span{flex:1;text-align:center;font-size:9px;color:var(--muted);}
+</style>
+</head>
+<body>
+
+<!-- WELCOME -->
+<div class="page active" id="page-welcome">
+  <div class="welcome-inner">
+    <div class="welcome-badge"><span></span> AI-Powered Health Tool</div>
+    <h1 class="welcome-title">Know Your Body.<br>Own Your Health.</h1>
+    <p class="welcome-sub">Get your personalized BMI analysis with AI recommendations, ideal weight tracker, and downloadable PDF report.</p>
+    <div class="form-card">
+      <div class="form-row">
+        <div class="field"><label>Full Name</label><input type="text" id="w-name" placeholder="John Silva" /></div>
+        <div class="field"><label>Age</label><input type="number" id="w-age" placeholder="25" min="1" max="120" /></div>
+      </div>
+      <div class="field" style="margin-bottom:20px;"><label>Gender</label><select id="w-gender"><option value="1">Male</option><option value="0">Female</option></select></div>
+      <button class="btn-primary" onclick="startApp()">Get Started →</button>
+    </div>
+  </div>
+</div>
+
+<!-- PREDICTOR -->
+<div class="page" id="page-predict">
+  <div class="topbar">
+    <div class="topbar-name">Hello, <strong id="disp-name">User</strong> 👋</div>
+    <div class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('predict')">Check BMI</button>
+      <button class="nav-tab" onclick="showTab('history')">History</button>
+      <button class="nav-tab" onclick="showTab('dash')">Dashboard</button>
+    </div>
+  </div>
+  <div class="predict-card">
+    <div class="card-title">Calculate your BMI</div>
+    <div class="how-to">
+      <div class="how-to-title">How to use</div>
+      <div class="how-to-steps">
+        1. Select your <strong>gender</strong> below<br>
+        2. Slide to set your <strong>height</strong> in cm<br>
+        3. Slide to set your <strong>weight</strong> in kg<br>
+        4. Click <strong>Calculate BMI</strong> to get your full report<br>
+        5. Click <strong>Download PDF Report</strong> to save or share
+      </div>
+    </div>
+    <div class="gender-row">
+      <button class="gender-btn selected" id="gb-male" onclick="selectGender(1)">Male</button>
+      <button class="gender-btn" id="gb-female" onclick="selectGender(0)">Female</button>
+    </div>
+    <div class="slider-field">
+      <label>Height</label>
+      <div class="slider-top"><span class="slider-num" id="h-display">00</span><span class="slider-unit">cm</span></div>
+      <input type="range" id="height" min="00" max="220" value="00" step="1" oninput="document.getElementById('h-display').textContent=this.value">
+    </div>
+    <div class="slider-field">
+      <label>Weight</label>
+      <div class="slider-top"><span class="slider-num" id="w-display">00</span><span class="slider-unit">kg</span></div>
+      <input type="range" id="weight" min="00" max="200" value="00" step="1" oninput="document.getElementById('w-display').textContent=this.value">
+    </div>
+    <button class="btn-primary" onclick="predict()">Calculate BMI</button>
+
+    <!-- RESULT -->
+    <div class="result-box" id="result-box">
+      <div class="result-top">
+        <div class="result-bmi" id="res-bmi">--</div>
+        <div class="result-right"><div class="result-cat" id="res-cat">--</div><div class="result-msg" id="res-msg"></div></div>
+      </div>
+      <div class="result-stats">
+        <div class="rstat"><div class="rstat-val" id="rs-h">--</div><div class="rstat-label">Height</div></div>
+        <div class="rstat"><div class="rstat-val" id="rs-w">--</div><div class="rstat-label">Weight</div></div>
+        <div class="rstat"><div class="rstat-val" id="rs-age">--</div><div class="rstat-label">Age</div></div>
+      </div>
+    </div>
+
+    <!-- BMI SCALE -->
+    <div id="bmi-scale" style="display:none;margin-top:20px;">
+      <div class="section-label">BMI Scale — Your Position</div>
+      <div class="scale-bar"><div class="scale-seg seg-0"></div><div class="scale-seg seg-1"></div><div class="scale-seg seg-2"></div><div class="scale-seg seg-3"></div><div class="scale-seg seg-4"></div><div class="scale-seg seg-5"></div></div>
+      <div class="scale-pointer-wrap"><div class="scale-pointer" id="scale-ptr">You</div></div>
+      <div class="scale-legend"><span>15</span><span>17</span><span>18.5</span><span>25</span><span>30</span><span>35</span><span>45+</span></div>
+    </div>
+
+    <!-- IDEAL WEIGHT -->
+    <div class="normal-range" id="normal-range" style="display:none;">
+      <div class="normal-range-title">🎯 Ideal Weight Range for Your Height</div>
+      <div class="normal-range-grid">
+        <div class="nrg-item"><div class="nrg-val" id="nr-ideal">--</div><div class="nrg-label">Ideal Weight</div></div>
+        <div class="nrg-item"><div class="nrg-val" id="nr-min">--</div><div class="nrg-label">Min (BMI 18.5)</div></div>
+        <div class="nrg-item"><div class="nrg-val" id="nr-max">--</div><div class="nrg-label">Max (BMI 24.9)</div></div>
+      </div>
+      <div class="weight-diff" id="weight-diff"></div>
+    </div>
+
+    <!-- AI RECOMMENDATIONS -->
+    <div class="ai-reco" id="ai-reco" style="display:none;">
+      <div class="ai-reco-title" id="ai-reco-title">🥗 Personalised Recommendations</div>
+      <div id="ai-tips"></div>
+    </div>
+
+    <!-- PDF REPORT -->
+    <button class="report-btn" id="report-btn" style="display:none;" onclick="downloadPDF()">📄 Download PDF Report</button>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="page" id="page-history">
+  <div class="history-wrap">
+    <div style="margin-bottom:20px;"><div class="nav-tabs"><button class="nav-tab" onclick="showTab('predict')">Check BMI</button><button class="nav-tab active" onclick="showTab('history')">History</button><button class="nav-tab" onclick="showTab('dash')">Dashboard</button></div></div>
+    <div class="history-header"><div class="history-title">Your History</div><button class="clear-btn" onclick="clearHistory()">Clear all</button></div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page" id="page-dash">
+  <div class="dash-wrap">
+    <div style="margin-bottom:20px;"><div class="nav-tabs"><button class="nav-tab" onclick="showTab('predict')">Check BMI</button><button class="nav-tab" onclick="showTab('history')">History</button><button class="nav-tab active" onclick="showTab('dash')">Dashboard</button></div></div>
+    <div class="dash-title">Dashboard</div>
+    <div class="dash-grid">
+      <div class="dash-card"><div class="dash-card-label">Total Checks</div><div class="dash-card-val" id="d-total">0</div><div class="dash-card-sub">predictions made</div></div>
+      <div class="dash-card"><div class="dash-card-label">Latest BMI</div><div class="dash-card-val" id="d-latest">--</div><div class="dash-card-sub" id="d-latest-cat">no data yet</div></div>
+      <div class="dash-card"><div class="dash-card-label">Average BMI</div><div class="dash-card-val" id="d-avg">--</div><div class="dash-card-sub">across all checks</div></div>
+      <div class="dash-card"><div class="dash-card-label">Most Common</div><div class="dash-card-val" style="font-size:16px;" id="d-common">--</div><div class="dash-card-sub">category</div></div>
+    </div>
+    <div class="dash-full">
+      <div class="dash-full-title">BMI Category Distribution</div>
+      <div class="dist-bar" id="dist-bar">
+        <div class="dist-col seg-0" style="height:4px;"><span class="dist-tip">0</span></div>
+        <div class="dist-col seg-1" style="height:4px;"><span class="dist-tip">0</span></div>
+        <div class="dist-col seg-2" style="height:4px;"><span class="dist-tip">0</span></div>
+        <div class="dist-col seg-3" style="height:4px;"><span class="dist-tip">0</span></div>
+        <div class="dist-col seg-4" style="height:4px;"><span class="dist-tip">0</span></div>
+        <div class="dist-col seg-5" style="height:4px;"><span class="dist-tip">0</span></div>
+      </div>
+      <div class="dist-labels"><span>Ex.Weak</span><span>Weak</span><span>Normal</span><span>Overweight</span><span>Obesity</span><span>Ex.Obesity</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const cats=['Extremely Weak','Weak','Normal','Overweight','Obesity','Extreme Obesity'];
+const clsMap={0:'weak',1:'weak',2:'normal',3:'warning',4:'danger',5:'danger'};
+const colMap={weak:'#60a5fa',normal:'#34d399',warning:'#fbbf24',danger:'#f87171'};
+
+const recoData={
+  0:{cls:'reco-weak',title:'🥗 Recommendations — Extremely Underweight',tips:[
+    {icon:'🍗',text:'<strong>Increase protein intake</strong> — eat eggs, chicken, lentils, and dairy 3-4 times a day.'},
+    {icon:'🍚',text:'<strong>Boost your calorie intake</strong> — add rice, nuts, avocado, and peanut butter to your meals.'},
+    {icon:'🏋️',text:'<strong>Start light strength training</strong> — build muscle mass gradually.'},
+    {icon:'👨‍⚕️',text:'<strong>Consult a doctor</strong> — your BMI is very low and a medical check-up is recommended.'}
+  ]},
+  1:{cls:'reco-weak',title:'🥗 Recommendations — Underweight',tips:[
+    {icon:'🍳',text:'<strong>Increase your calorie intake</strong> — include healthy fats like nuts and olive oil.'},
+    {icon:'🥛',text:'<strong>Have protein shakes or milk</strong> twice a day to support weight gain.'},
+    {icon:'💪',text:'<strong>Start exercising</strong> — walking and light gym workouts help build muscle.'},
+    {icon:'😴',text:'<strong>Get 7-8 hours of sleep</strong> every night to allow your body to recover and grow.'}
+  ]},
+  2:{cls:'reco-normal',title:'🥗 Recommendations — Normal Weight ✅',tips:[
+    {icon:'🎉',text:'<strong>Your BMI is in the normal range!</strong> Keep up your current healthy lifestyle.'},
+    {icon:'🥦',text:'<strong>Maintain a balanced diet</strong> — eat vegetables, protein, and complex carbs regularly.'},
+    {icon:'🏃',text:'<strong>Exercise regularly</strong> — aim for at least 30 minutes of activity per day.'},
+    {icon:'💧',text:'<strong>Stay hydrated</strong> — drink 2-3 litres of water daily to keep your body functioning well.'}
+  ]},
+  3:{cls:'reco-warning',title:'🥗 Recommendations — Overweight',tips:[
+    {icon:'🏃',text:'<strong>Add 30 minutes of daily exercise</strong> — try walking, cycling, or swimming.'},
+    {icon:'🚫',text:'<strong>Reduce sugar and refined carbs</strong> — cut back on white rice, bread, sweets, and soft drinks.'},
+    {icon:'🥗',text:'<strong>Eat more vegetables and protein</strong> and practice portion control at every meal.'},
+    {icon:'📱',text:'<strong>Use a calorie tracking app</strong> like MyFitnessPal to monitor your daily food intake.'}
+  ]},
+  4:{cls:'reco-danger',title:'🥗 Recommendations — Obesity',tips:[
+    {icon:'👨‍⚕️',text:'<strong>See a doctor or nutritionist</strong> to get a personalised weight loss plan.'},
+    {icon:'🚶',text:'<strong>Start with low-impact exercise</strong> — walking or swimming for 30-45 minutes daily.'},
+    {icon:'🍽️',text:'<strong>Reduce your portion sizes</strong> — switch to smaller plates to help control how much you eat.'},
+    {icon:'🚫',text:'<strong>Avoid fast food, fried food, and sugary drinks</strong> completely.'}
+  ]},
+  5:{cls:'reco-danger',title:'🥗 Recommendations — Extreme Obesity ⚠️',tips:[
+    {icon:'🚨',text:'<strong>See a doctor immediately</strong> — start a medically supervised weight loss program.'},
+    {icon:'🥗',text:'<strong>Follow a low-calorie, high-nutrition diet</strong> with guidance from a registered dietitian.'},
+    {icon:'🚶',text:'<strong>Begin with gentle movement</strong> — chair exercises or water walking are great starting points.'},
+    {icon:'❤️',text:'<strong>Seek mental health support</strong> — emotional support is an important part of any weight loss journey.'}
+  ]}
+};
+
+let userData={},lastResult={};
+let history=JSON.parse(localStorage.getItem('bmi_history')||'[]');
+let selectedGender=1;
+
+function startApp(){
+  const name=document.getElementById('w-name').value.trim()||'User';
+  const age=document.getElementById('w-age').value||'?';
+  const gender=parseInt(document.getElementById('w-gender').value);
+  userData={name,age,gender};selectedGender=gender;
+  document.getElementById('disp-name').textContent=name;
+  if(gender===0){document.getElementById('gb-male').classList.remove('selected');document.getElementById('gb-female').classList.add('selected');}
+  showPage('page-predict');
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showTab(t){
+  if(t==='predict')showPage('page-predict');
+  else if(t==='history'){showPage('page-history');renderHistory();}
+  else if(t==='dash'){showPage('page-dash');renderDash();}
+}
+
+function selectGender(g){
+  selectedGender=g;
+  document.getElementById('gb-male').classList.toggle('selected',g===1);
+  document.getElementById('gb-female').classList.toggle('selected',g===0);
+}
+
+async function predict(){
+  const h=parseFloat(document.getElementById('height').value);
+  const w=parseFloat(document.getElementById('weight').value);
+  if(!h||!w||h<100||h>220||w<20||w>200){
+    alert('Please enter a realistic height (100-220 cm) and weight (20-200 kg)!');return;
+  }
+  const rawBMI=w/((h/100)**2);
+  if(!isFinite(rawBMI)||isNaN(rawBMI)||rawBMI<8||rawBMI>70){
+    alert('These values give an unrealistic BMI. Please check your height and weight!');return;
+  }
+  const bmi=parseFloat(rawBMI.toFixed(1));
+  let idx;
+  try{
+    const resp=await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({height:h,weight:w,gender:selectedGender})});
+    const data=await resp.json();idx=data.index;
+  }catch(e){idx=getBMIIndex(bmi);}
+  showResult(idx,bmi,h,w);
+  saveHistory(idx,bmi,h,w);
+}
+
+function getBMIIndex(b){if(b<16)return 0;if(b<17)return 1;if(b<25)return 2;if(b<30)return 3;if(b<35)return 4;return 5;}
+
+function showResult(idx,bmi,h,w){
+  const cls=clsMap[idx];
+  const msgs=[
+    'Extremely underweight — please seek medical advice.',
+    'Underweight — try to gain some healthy weight.',
+    'Great! Your BMI is in the normal range!',
+    'Slightly overweight — small lifestyle changes can help.',
+    'Obesity range — please consult a doctor.',
+    'Extreme obesity — medical advice is strongly recommended.'
+  ];
+  const box=document.getElementById('result-box');
+  box.className='result-box '+cls;box.style.display='block';
+  const bmiEl=document.getElementById('res-bmi');
+  bmiEl.textContent=bmi;bmiEl.className='result-bmi '+cls;
+  document.getElementById('res-cat').textContent=cats[idx];
+  document.getElementById('res-msg').textContent=msgs[idx];
+  document.getElementById('rs-h').textContent=h+'cm';
+  document.getElementById('rs-w').textContent=w+'kg';
+  document.getElementById('rs-age').textContent=userData.age||'?';
+  document.getElementById('bmi-scale').style.display='block';
+  const pct=Math.min(97,Math.max(3,((bmi-15)/(45-15))*100));
+  document.getElementById('scale-ptr').style.left=pct+'%';
+  const hM=h/100;
+  const ideal=(22*hM*hM).toFixed(1);
+  const minW=(18.5*hM*hM).toFixed(1);
+  const maxW=(24.9*hM*hM).toFixed(1);
+  document.getElementById('nr-ideal').textContent=ideal+' kg';
+  document.getElementById('nr-min').textContent=minW+' kg';
+  document.getElementById('nr-max').textContent=maxW+' kg';
+  const diff=(w-parseFloat(ideal)).toFixed(1);
+  let diffText='';
+  if(Math.abs(diff)<0.5)diffText='✅ You are very close to your ideal weight!';
+  else if(diff>0)diffText=`⬇️ You need to lose <strong>${diff} kg</strong> to reach your ideal weight.`;
+  else diffText=`⬆️ You need to gain <strong>${Math.abs(diff)} kg</strong> to reach your ideal weight.`;
+  document.getElementById('weight-diff').innerHTML=diffText;
+  document.getElementById('normal-range').style.display='block';
+  const reco=recoData[idx];
+  const recoEl=document.getElementById('ai-reco');
+  recoEl.className='ai-reco '+reco.cls;recoEl.style.display='block';
+  document.getElementById('ai-reco-title').textContent=reco.title;
+  document.getElementById('ai-tips').innerHTML=reco.tips.map(t=>`<div class="ai-tip"><div class="ai-tip-icon">${t.icon}</div><div class="ai-tip-text">${t.text}</div></div>`).join('');
+  document.getElementById('report-btn').style.display='flex';
+  lastResult={name:userData.name,age:userData.age,gender:selectedGender===1?'Male':'Female',height:h,weight:w,bmi,idx,category:cats[idx],ideal,minW,maxW,diff,tips:reco.tips,date:new Date().toLocaleString()};
+}
+
+function saveHistory(idx,bmi,h,w){
+  history.unshift({name:userData.name||'User',age:userData.age||'?',gender:selectedGender,height:h,weight:w,bmi,idx,time:new Date().toLocaleString()});
+  if(history.length>50)history=history.slice(0,50);
+  localStorage.setItem('bmi_history',JSON.stringify(history));
+}
+
+function downloadPDF(){
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF();
+  const r=lastResult;
+  const col=r.idx<=1?[96,165,250]:r.idx===2?[52,211,153]:r.idx===3?[251,191,36]:[248,113,113];
+
+  // Background
+  doc.setFillColor(15,15,19);
+  doc.rect(0,0,210,297,'F');
+
+  // Header bar
+  doc.setFillColor(...col);
+  doc.rect(0,0,210,52,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(22);doc.setFont('helvetica','bold');
+  doc.text('BMI Health Report',20,20);
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text(`Generated: ${r.date}`,20,30);
+  doc.text(`${r.name}  |  Age: ${r.age}  |  ${r.gender}`,20,40);
+  doc.text(`Height: ${r.height} cm   Weight: ${r.weight} kg`,20,49);
+
+  // BMI Score box
+  doc.setFillColor(26,26,34);
+  doc.roundedRect(15,62,85,52,4,4,'F');
+  doc.setTextColor(...col);
+  doc.setFontSize(38);doc.setFont('helvetica','bold');
+  doc.text(String(r.bmi),57,92,{align:'center'});
+  doc.setFontSize(11);doc.setFont('helvetica','normal');
+  doc.text('BMI Score',57,103,{align:'center'});
+
+  // Category box
+  doc.setFillColor(26,26,34);
+  doc.roundedRect(110,62,85,52,4,4,'F');
+  doc.setTextColor(240,240,245);
+  doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text(r.category,152,84,{align:'center'});
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.setTextColor(136,136,160);
+  doc.text('BMI Category',152,95,{align:'center'});
+
+  // BMI Status label
+  const statusLabels=['Extremely Weak','Weak','Normal','Overweight','Obese','Extremely Obese'];
+  const statusColors=[[96,165,250],[147,197,253],[52,211,153],[251,191,36],[249,115,22],[248,113,113]];
+  doc.setFillColor(...statusColors[r.idx]);
+  doc.roundedRect(110,104,85,10,2,2,'F');
+  doc.setTextColor(15,15,19);
+  doc.setFontSize(9);doc.setFont('helvetica','bold');
+  doc.text(statusLabels[r.idx],152,111,{align:'center'});
+
+  // Ideal Weight section
+  doc.setTextColor(...col);
+  doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('Ideal Weight Range',20,132);
+  const boxes=[[15,137,55],[78,137,55],[141,137,55]];
+  const vals=[r.ideal+' kg',r.minW+' kg',r.maxW+' kg'];
+  const labels=['Ideal (BMI 22)','Min (BMI 18.5)','Max (BMI 24.9)'];
+  boxes.forEach(([x,y,w],i)=>{
+    doc.setFillColor(26,26,34);
+    doc.roundedRect(x,y,w,28,3,3,'F');
+    doc.setTextColor(240,240,245);
+    doc.setFontSize(12);doc.setFont('helvetica','bold');
+    doc.text(vals[i],x+w/2,y+13,{align:'center'});
+    doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.setTextColor(136,136,160);
+    doc.text(labels[i],x+w/2,y+22,{align:'center'});
+  });
+
+  // Weight goal
+  const diffNum=parseFloat(r.diff);
+  let goalText='You are very close to your ideal weight!';
+  if(Math.abs(diffNum)>=0.5){
+    goalText=diffNum>0?`Lose ${r.diff} kg to reach ideal weight.`:`Gain ${Math.abs(r.diff)} kg to reach ideal weight.`;
+  }
+  doc.setFillColor(26,26,34);
+  doc.roundedRect(15,170,180,16,3,3,'F');
+  doc.setTextColor(...col);
+  doc.setFontSize(10);doc.setFont('helvetica','normal');
+  doc.text(`Goal: ${goalText}`,105,180,{align:'center'});
+
+  // Recommendations
+  doc.setTextColor(...col);
+  doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text('Personalised Recommendations',20,198);
+  let y=208;
+  r.tips.forEach((t,i)=>{
+    const plain=t.text.replace(/<[^>]+>/g,'');
+    doc.setFillColor(26,26,34);
+    doc.roundedRect(15,y-5,180,16,2,2,'F');
+    doc.setTextColor(200,200,215);
+    doc.setFontSize(9);doc.setFont('helvetica','normal');
+    const lines=doc.splitTextToSize(`${i+1}. ${plain}`,170);
+    doc.text(lines,20,y+3);
+    y+=18;
+  });
+
+  // Footer
+  doc.setFillColor(26,26,34);
+  doc.rect(0,278,210,19,'F');
+  doc.setTextColor(136,136,160);
+  doc.setFontSize(8);
+  doc.text('BMI Predictor — AI Powered Health Tool',105,286,{align:'center'});
+  doc.text(`Confidential Report for ${r.name}  |  ${r.date}`,105,292,{align:'center'});
+
+  doc.save(`BMI_Report_${r.name.replace(/\s+/g,'_')}.pdf`);
+}
+
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(history.length===0){el.innerHTML='<div class="history-empty"><div class="big">📋</div><div>No history yet.<br>Check your BMI first!</div></div>';return;}
+  el.innerHTML=history.map(h=>{
+    const col=colMap[clsMap[h.idx]];
+    const initials=h.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    return `<div class="history-item"><div class="hi-left"><div class="hi-avatar" style="background:${col}22;color:${col};">${initials}</div><div class="hi-info"><div class="hi-name">${h.name}</div><div class="hi-meta">${h.height}cm · ${h.weight}kg · Age ${h.age}</div></div></div><div class="hi-right"><div class="hi-bmi" style="color:${col};">${h.bmi}</div><div class="hi-cat">${cats[h.idx]}</div><div class="hi-time">${h.time}</div></div></div>`;
+  }).join('');
+}
+
+function clearHistory(){
+  if(!confirm('Clear all history?'))return;
+  history=[];localStorage.removeItem('bmi_history');renderHistory();
+}
+
+function renderDash(){
+  document.getElementById('d-total').textContent=history.length;
+  if(!history.length){['d-latest','d-avg','d-common'].forEach(id=>document.getElementById(id).textContent='--');document.getElementById('d-latest-cat').textContent='no data yet';return;}
+  const latest=history[0];
+  const le=document.getElementById('d-latest');
+  le.textContent=latest.bmi;le.style.color=colMap[clsMap[latest.idx]];
+  document.getElementById('d-latest-cat').textContent=cats[latest.idx];
+  document.getElementById('d-avg').textContent=(history.reduce((a,b)=>a+b.bmi,0)/history.length).toFixed(1);
+  const counts=[0,0,0,0,0,0];history.forEach(h=>counts[h.idx]++);
+  document.getElementById('d-common').textContent=cats[counts.indexOf(Math.max(...counts))];
+  const mx=Math.max(...counts,1);
+  document.querySelectorAll('#dist-bar .dist-col').forEach((col,i)=>{
+    col.style.height=Math.max(4,(counts[i]/mx)*100)+'px';
+    col.querySelector('.dist-tip').textContent=counts[i];
+  });
+}
+</script>
+</body>
+</html>
