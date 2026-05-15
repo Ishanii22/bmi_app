@@ -20,8 +20,6 @@ The application takes user input (height and weight), processes it through a tra
 - Scikit-learn 🤖
 - Pandas / NumPy
 - HTML / CSS
-- Flask / Streamlit (if used)
-
 
 
 ## 📊 Dataset
